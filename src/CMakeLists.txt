@@ -21,6 +21,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(xss-lock
     xss-lock.c
+    xss-lock.h
     xcb_utils.c
     xcb_utils.h
     config.h
