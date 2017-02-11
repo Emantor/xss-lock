@@ -3,6 +3,10 @@
 #define LOGIND_MANAGER_INTERFACE "org.freedesktop.login1.Manager"
 #define LOGIND_SESSION_INTERFACE "org.freedesktop.login1.Session"
 
+#define SECRET_SERVICE "org.freedesktop.secrets"
+#define SECRET_PATH    "/org/freedesktop/secrets"
+#define SECRET_SERVICE_INTERFACE "org.freedesktop.Secret.Service"
+
 typedef struct Child {
     gchar        *name;
     gchar       **cmd;
@@ -41,13 +45,15 @@ static gboolean opt_quiet = FALSE;
 static gboolean opt_verbose = FALSE;
 static gboolean opt_ignore_sleep = FALSE;
 static gboolean opt_print_version = FALSE;
+static gboolean opt_lock_secrets = FALSE;
 
 static GOptionEntry opt_entries[] = {
     {G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &locker.cmd, NULL, "LOCK_CMD [ARG...]"},
     {"notifier", 'n', G_OPTION_FLAG_FILENAME, G_OPTION_ARG_CALLBACK, parse_notifier_cmd, "Send notification using CMD", "CMD"},
     {"transfer-sleep-lock", 'l', 0, G_OPTION_ARG_NONE, &locker.transfer_sleep_lock_fd, "Pass sleep delay lock file descriptor to locker", NULL},
     {"ignore-sleep", 0, 0, G_OPTION_ARG_NONE, &opt_ignore_sleep, "Do not lock on suspend/hibernate", NULL},
-    {"quiet", 'q', 0, G_OPTION_ARG_NONE, &opt_quiet, "Output only fatal errors", NULL},
+    {"quiet", 'q', 0, G_OPTION_ARG_NONE, &opt_quiet, "output only fatal errors", NULL},
+    {"lock-secrets", 's', 0, G_OPTION_ARG_NONE, &opt_lock_secrets, "Lock secrets", NULL},
     {"verbose", 'v', 0, G_OPTION_ARG_NONE, &opt_verbose, "Output more messages", NULL},
     {"version", 0, 0, G_OPTION_ARG_NONE, &opt_print_version, "Print version number and exit", NULL},
     {NULL}
@@ -55,5 +61,6 @@ static GOptionEntry opt_entries[] = {
 
 static GDBusProxy *logind_manager = NULL;
 static GDBusProxy *logind_session = NULL;
+static GDBusProxy *secret_service = NULL;
 static gint sleep_lock_fd = -1;
 static gboolean preparing_for_sleep = FALSE;

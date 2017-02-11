@@ -99,10 +99,10 @@ screensaver_event_cb(xcb_connection_t *connection, xcb_generic_event_t *event,
                      const int *const xcb_screensaver_notify)
 {
     uint8_t event_type;
-    
+
     if (!event)
         g_critical("X connection lost; exiting.");
-    
+
     event_type = XCB_EVENT_RESPONSE_TYPE(event);
     if (event_type == 0) {
         xcb_generic_error_t *error = (xcb_generic_error_t *)event;
@@ -231,6 +231,21 @@ logind_manager_proxy_new_cb(GObject *source_object, GAsyncResult *res,
 }
 
 static void
+secret_service_proxy_new_cb(GObject *source_object, GAsyncResult *res,
+			    gpointer user_data)
+{
+  GError *error = NULL;
+
+  secret_service = g_dbus_proxy_new_for_bus_finish(res, &error);
+
+  if (!secret_service) {
+    g_warning("Error connecting to freedesktop secret service: %s", error->message);
+    g_error_free(error);
+    return;
+  }
+}
+
+static void
 logind_manager_take_sleep_delay_lock(void)
 {
     if (sleep_lock_fd >= 0)
@@ -251,7 +266,7 @@ logind_manager_call_inhibit_cb(GObject *source_object, GAsyncResult *res,
     GError *error = NULL;
     GUnixFDList *fd_list;
     gint32 fd_index = 0;
-    
+
     result = g_dbus_proxy_call_with_unix_fd_list_finish(logind_manager,
                                                         &fd_list, res, &error);
     if (!result) {
@@ -286,6 +301,17 @@ logind_manager_on_signal_prepare_for_sleep(GDBusProxy *proxy,
     g_variant_get(parameters, "(b)", &active);
     if (active) {
         preparing_for_sleep = TRUE;
+
+        if(opt_lock_secrets) {
+            GError *error = NULL;
+            GVariant *result;
+
+            result = g_dbus_proxy_call_sync(secret_service, "LockService", NULL, G_DBUS_SIGNAL_FLAGS_NONE, 1000, NULL, &error);
+            if(!result) {
+              g_warning("Could not lock secrets: %s", error->message);
+              g_error_free(error);
+            }
+        }
 
         start_child(&locker);
 
@@ -346,8 +372,21 @@ logind_session_on_signal_lock(GDBusProxy *proxy,
                               GVariant   *parameters,
                               gpointer    user_data)
 {
-    if (!g_strcmp0(signal_name, "Lock"))
+  if (!g_strcmp0(signal_name, "Lock"))
+    {
+        if(opt_lock_secrets) {
+            GError *error = NULL;
+            GVariant *result;
+
+            result = g_dbus_proxy_call_sync(secret_service, "LockService", NULL, G_DBUS_SIGNAL_FLAGS_NONE, 1000, NULL, &error);
+            if(!result) {
+                g_warning("Could not lock secrets: %s", error->message);
+                g_error_free(error);
+            }
+        }
+
         start_child(&locker);
+    }
     else if (!g_strcmp0(signal_name, "Unlock"))
         kill_child(&locker);
 }
@@ -432,7 +471,7 @@ main(int argc, char *argv[])
     xcb_atom_t atom;
 
     setlocale(LC_ALL, "");
-    
+
     if (!parse_options(argc, argv, &error) || opt_print_version) {
         if (opt_print_version) {
             g_print(VERSION "\n");
@@ -452,11 +491,18 @@ main(int argc, char *argv[])
 #if !GLIB_CHECK_VERSION(2, 36, 0)
     g_type_init();
 #endif
- 
+
     g_dbus_proxy_new_for_bus(G_BUS_TYPE_SYSTEM,
                              G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES, NULL,
                              LOGIND_SERVICE, LOGIND_PATH, LOGIND_MANAGER_INTERFACE,
                              NULL, logind_manager_proxy_new_cb, NULL);
+    if(opt_lock_secrets)
+    {
+        g_dbus_proxy_new_for_bus(G_BUS_TYPE_SESSION,
+                                 G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES, NULL,
+                                 SECRET_SERVICE, SECRET_PATH, SECRET_SERVICE_INTERFACE,
+                                 NULL, secret_service_proxy_new_cb, NULL);
+    }
 
     loop = g_main_loop_new(NULL, FALSE);
     g_unix_signal_add(SIGTERM, (GSourceFunc)exit_service, loop);
