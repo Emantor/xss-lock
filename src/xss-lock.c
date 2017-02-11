@@ -225,8 +225,8 @@ logind_manager_proxy_new_cb(GObject *source_object, GAsyncResult *res,
                          G_CALLBACK(logind_manager_on_signal_prepare_for_sleep), NULL);
         logind_manager_take_sleep_delay_lock();
     }
-    g_dbus_proxy_call(logind_manager, "GetSessionByPID",
-                      g_variant_new("(u)", getpid()), G_DBUS_CALL_FLAGS_NONE,
+    g_dbus_proxy_call(logind_manager, "GetUser",
+                      g_variant_new("(u)", getuid()), G_DBUS_CALL_FLAGS_NONE,
                       -1, NULL, logind_manager_call_get_session_cb, NULL);
 }
 
