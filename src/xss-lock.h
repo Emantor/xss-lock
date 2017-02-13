@@ -35,7 +35,6 @@ static void logind_session_set_idle_hint(gboolean idle);
 
 static gboolean parse_options(int argc, char *argv[], GError **error);
 static gboolean parse_notifier_cmd(const gchar *option_name, const gchar *value, gpointer data, GError **error);
-static gboolean reset_screensaver(xcb_connection_t *connection);
 static gboolean exit_service(GMainLoop *loop);
 static void log_handler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer user_data);
 

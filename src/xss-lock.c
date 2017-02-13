@@ -62,7 +62,9 @@ register_screensaver(xcb_connection_t *connection, xcb_screen_t *screen,
     version_reply = xcb_screensaver_query_version_reply(connection,
                                                         version_cookie,
                                                         &xcb_error);
-    if (xcb_error = xcb_request_check(connection, set_attributes_cookie)) {
+
+    xcb_error = xcb_request_check(connection, set_attributes_cookie);
+    if (xcb_error) {
         g_set_error(error, XCB_ERROR, 0, "Failed to set screensaver attributes; "
                                          "is another one running?");
         goto out;
@@ -146,7 +148,7 @@ screensaver_event_cb(xcb_connection_t *connection, xcb_generic_event_t *event,
 }
 
 static void
-keep_sleep_lock_fd_open(gpointer user_data)
+keep_sleep_lock_fd_open(__attribute__((unused)) gpointer user_data)
 {
     fcntl(sleep_lock_fd, F_SETFD, ~FD_CLOEXEC & fcntl(sleep_lock_fd, F_GETFD));
 }
@@ -208,8 +210,8 @@ child_watch_cb(GPid pid, gint status, Child *child)
 }
 
 static void
-logind_manager_proxy_new_cb(GObject *source_object, GAsyncResult *res,
-                            gpointer user_data)
+logind_manager_proxy_new_cb(__attribute__((unused)) GObject *source_object, GAsyncResult *res,
+                            __attribute__((unused)) gpointer user_data)
 {
     GError *error = NULL;
 
@@ -231,8 +233,8 @@ logind_manager_proxy_new_cb(GObject *source_object, GAsyncResult *res,
 }
 
 static void
-secret_service_proxy_new_cb(GObject *source_object, GAsyncResult *res,
-			    gpointer user_data)
+secret_service_proxy_new_cb(__attribute__((unused)) GObject *source_object, GAsyncResult *res,
+			    __attribute__((unused)) gpointer user_data)
 {
   GError *error = NULL;
 
@@ -259,8 +261,8 @@ logind_manager_take_sleep_delay_lock(void)
 }
 
 static void
-logind_manager_call_inhibit_cb(GObject *source_object, GAsyncResult *res,
-                               gpointer user_data)
+logind_manager_call_inhibit_cb(__attribute__((unused)) GObject *source_object, GAsyncResult *res,
+                               __attribute__((unused)) gpointer user_data)
 {
     GVariant *result = NULL;
     GError *error = NULL;
@@ -287,11 +289,11 @@ logind_manager_call_inhibit_cb(GObject *source_object, GAsyncResult *res,
 }
 
 static void
-logind_manager_on_signal_prepare_for_sleep(GDBusProxy *proxy,
-                                           gchar      *sender_name,
+logind_manager_on_signal_prepare_for_sleep(__attribute__((unused)) GDBusProxy *proxy,
+                                           __attribute__((unused)) gchar      *sender_name,
                                            gchar      *signal_name,
                                            GVariant   *parameters,
-                                           gpointer    user_data)
+                                           __attribute__((unused)) gpointer    user_data)
 {
     gboolean active;
 
@@ -325,8 +327,8 @@ logind_manager_on_signal_prepare_for_sleep(GDBusProxy *proxy,
 }
 
 static void
-logind_manager_call_get_session_cb(GObject *source_object, GAsyncResult *res,
-                                   gpointer user_data)
+logind_manager_call_get_session_cb(__attribute__((unused)) GObject *source_object, GAsyncResult *res,
+                                   __attribute__((unused)) gpointer user_data)
 {
     GVariant *result;
     GError *error = NULL;
@@ -349,8 +351,8 @@ logind_manager_call_get_session_cb(GObject *source_object, GAsyncResult *res,
 }
 
 static void
-logind_session_proxy_new_cb(GObject *source_object, GAsyncResult *res,
-                            gpointer user_data)
+logind_session_proxy_new_cb(__attribute__((unused)) GObject *source_object, GAsyncResult *res,
+                            __attribute__((unused)) gpointer user_data)
 {
     GError *error = NULL;
 
@@ -366,11 +368,11 @@ logind_session_proxy_new_cb(GObject *source_object, GAsyncResult *res,
 }
 
 static void
-logind_session_on_signal_lock(GDBusProxy *proxy,
-                              gchar      *sender_name,
+logind_session_on_signal_lock(__attribute__((unused)) GDBusProxy *proxy,
+                              __attribute__((unused)) gchar      *sender_name,
                               gchar      *signal_name,
-                              GVariant   *parameters,
-                              gpointer    user_data)
+                              __attribute__((unused)) GVariant   *parameters,
+                              __attribute__((unused)) gpointer    user_data)
 {
   if (!g_strcmp0(signal_name, "Lock"))
     {
@@ -420,7 +422,7 @@ parse_options(int argc, char *argv[], GError **error)
 
 static gboolean
 parse_notifier_cmd(const gchar *option_name, const gchar *value,
-                   gpointer data, GError **error)
+                   __attribute__((unused)) gpointer data, GError **error)
 {
     GError *parse_error = NULL;
 
@@ -431,14 +433,6 @@ parse_notifier_cmd(const gchar *option_name, const gchar *value,
         g_error_free(parse_error);
         return FALSE;
     }
-    return TRUE;
-}
-
-static gboolean
-reset_screensaver(xcb_connection_t *connection)
-{
-    if (!locker.pid)
-        xcb_force_screen_saver(connection, XCB_SCREEN_SAVER_RESET);
     return TRUE;
 }
 

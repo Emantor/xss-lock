@@ -27,6 +27,7 @@ add_executable(xss-lock
     config.h
 )
 
+target_compile_options(xss-lock PRIVATE -Wall -Werror -Wextra -fPIE -fstack-protector-strong)
 target_link_libraries(xss-lock ${GLIB2_LIBRARIES} ${XCB_LIBRARIES})
 
 install(TARGETS xss-lock DESTINATION bin)

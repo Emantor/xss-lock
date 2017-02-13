@@ -24,7 +24,8 @@ static GSourceFuncs xcb_event_funcs = {
     xcb_event_prepare,
     xcb_event_check,
     xcb_event_dispatch,
-    xcb_event_finalize
+    xcb_event_finalize,
+    .closure_callback = NULL
 };
 
 GQuark
@@ -39,7 +40,7 @@ xcb_enqueue_events(XcbEventSource *xcb_event_source,
 {
     xcb_generic_event_t *event;
 
-    while (event = poll(xcb_event_source->connection))
+    while ((event = poll(xcb_event_source->connection)) != 0)
         g_queue_push_tail(xcb_event_source->queue, event);
 }
 
