@@ -462,7 +462,7 @@ main(int argc, char *argv[])
     xcb_connection_t *connection = NULL;
     int default_screen_number;
     xcb_screen_t *default_screen;
-    xcb_atom_t atom;
+    xcb_atom_t atom = 0;
 
     setlocale(LC_ALL, "");
 
